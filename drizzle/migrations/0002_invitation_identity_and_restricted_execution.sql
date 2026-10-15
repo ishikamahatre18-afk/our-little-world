@@ -1,0 +1,5 @@
+CREATE FUNCTION public.invitation_request_name(p_id uuid) RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT p.name FROM public.partner_invitations i JOIN public.profiles p ON p.id=i.joiner_id WHERE i.id=p_id AND i.owner_id=auth.uid() AND i.status='pending' AND i.expires_at>now() $$;
+REVOKE ALL ON FUNCTION public.invitation_request_name(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.invitation_request_name(uuid) TO authenticated;
+REVOKE ALL ON FUNCTION public.create_user_profile(),public.my_relationship(),public.is_my_partner(uuid),public.save_profile(text,date,date,text),public.create_partner_invitation(),public.join_partner_invitation(text),public.resolve_partner_invitation(uuid,boolean) FROM anon;
+ALTER TABLE public.profiles ADD CONSTRAINT photo_owned_by_profile CHECK(photo_path IS NULL OR split_part(photo_path,'/',1)=id::text);

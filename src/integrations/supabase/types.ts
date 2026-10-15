@@ -154,6 +154,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      invitation_request_name: { Args: { p_id: string }; Returns: string }
       is_my_partner: { Args: { target: string }; Returns: boolean }
       join_partner_invitation: { Args: { p_code: string }; Returns: undefined }
       my_relationship: { Args: never; Returns: string }
