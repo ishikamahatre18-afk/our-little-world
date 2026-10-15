@@ -163,10 +163,10 @@ export type Database = {
       }
       save_profile: {
         Args: {
-          p_anniversary: string
-          p_birthday: string
-          p_name: string
-          p_photo_path: string
+          p_anniversary?: string
+          p_birthday?: string
+          p_name?: string
+          p_photo_path?: string
         }
         Returns: undefined
       }

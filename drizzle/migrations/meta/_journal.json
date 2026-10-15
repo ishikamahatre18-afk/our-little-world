@@ -8,6 +8,13 @@
       "when": 1792061038323,
       "tag": "0000_couples_profiles_verified_connections",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792061081848,
+      "tag": "0001_profile_validation_and_shared_anniversary",
+      "breakpoints": true
     }
   ]
 }
