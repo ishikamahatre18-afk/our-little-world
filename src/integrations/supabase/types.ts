@@ -14,13 +14,162 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      partner_invitations: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          joiner_id: string | null
+          owner_id: string
+          status: string
+        }
+        Insert: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          joiner_id?: string | null
+          owner_id: string
+          status?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          joiner_id?: string | null
+          owner_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_invitations_joiner_id_fkey"
+            columns: ["joiner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "partner_invitations_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          anniversary: string | null
+          birthday: string | null
+          id: string
+          name: string
+          photo_path: string | null
+        }
+        Insert: {
+          anniversary?: string | null
+          birthday?: string | null
+          id: string
+          name?: string
+          photo_path?: string | null
+        }
+        Update: {
+          anniversary?: string | null
+          birthday?: string | null
+          id?: string
+          name?: string
+          photo_path?: string | null
+        }
+        Relationships: []
+      }
+      relationship_members: {
+        Row: {
+          relationship_id: string
+          user_id: string
+        }
+        Insert: {
+          relationship_id: string
+          user_id: string
+        }
+        Update: {
+          relationship_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relationship_members_relationship_id_fkey"
+            columns: ["relationship_id"]
+            isOneToOne: false
+            referencedRelation: "relationships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relationship_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      relationships: {
+        Row: {
+          anniversary: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          anniversary: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          anniversary?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_partner_invitation: {
+        Args: never
+        Returns: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          joiner_id: string | null
+          owner_id: string
+          status: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "partner_invitations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      is_my_partner: { Args: { target: string }; Returns: boolean }
+      join_partner_invitation: { Args: { p_code: string }; Returns: undefined }
+      my_relationship: { Args: never; Returns: string }
+      resolve_partner_invitation: {
+        Args: { p_accept: boolean; p_id: string }
+        Returns: undefined
+      }
+      save_profile: {
+        Args: {
+          p_anniversary: string
+          p_birthday: string
+          p_name: string
+          p_photo_path: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
