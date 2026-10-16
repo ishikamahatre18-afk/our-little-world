@@ -1,5 +1,5 @@
 export function relationshipDates(anniversary: string, today = new Date()) {
-  const [year, month, day] = anniversary.split('-').map(Number);
+  const [year = 1970, month = 1, day = 1] = anniversary.split('-').map(Number);
   const start = Date.UTC(year, month - 1, day);
   const now = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
   const occurrence = (y: number) => Date.UTC(y, month - 1, Math.min(day, new Date(Date.UTC(y, month, 0)).getUTCDate()));
