@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      invite_join_attempts: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       partner_invitations: {
         Row: {
           code: string
@@ -156,8 +171,9 @@ export type Database = {
       }
       invitation_request_name: { Args: { p_id: string }; Returns: string }
       is_my_partner: { Args: { target: string }; Returns: boolean }
-      join_partner_invitation: { Args: { p_code: string }; Returns: undefined }
+      join_partner_invitation: { Args: { p_code: string }; Returns: string }
       my_relationship: { Args: never; Returns: string }
+      new_invite_code: { Args: never; Returns: string }
       resolve_partner_invitation: {
         Args: { p_accept: boolean; p_id: string }
         Returns: undefined
