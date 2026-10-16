@@ -9,7 +9,7 @@ import { lovable } from '@/integrations/lovable';
 import { useAccount, useWorld, type Profile } from './account-context';
 import { relationshipDates } from '@/lib/relationship-dates';
 
-function Avatar({profile,partner=false}:{profile?:Profile;partner?:boolean}) {
+function Avatar({profile,partner=false}:{profile?:Profile|undefined;partner?:boolean}) {
   return <span className={`avatar ${partner?'avatar-partner':'avatar-you'}`}>{profile?.photoUrl?<img src={profile.photoUrl} alt={profile.name}/>:profile?.name?.slice(0,1)||<UserRound size={23}/>}</span>;
 }
 function AccountPrompt() { return <div className="empty-state"><Heart size={25}/><h3>Your story starts with you.</h3><p>Log in to save your profile and invite your partner.</p><Button variant="romantic" size="roomy" asChild><Link to="/login">Log in <ArrowRight size={16}/></Link></Button><Link to="/signup" className="preview-link">Create an account</Link></div>; }
