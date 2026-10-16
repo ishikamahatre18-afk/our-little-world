@@ -103,7 +103,7 @@ export function ConnectPartner() {
   const invitation=world.data?.invitations.find(row=>row.status==='pending')||world.data?.invitations.find(row=>row.owner_id===world.user?.id);
   const action=useMutation({mutationFn:async(kind:'create'|'join'|'accept'|'cancel')=>{
     const result=kind==='create'?await supabase.rpc('create_partner_invitation'):kind==='join'?await supabase.rpc('join_partner_invitation',{p_code:code}):invitation?await supabase.rpc('resolve_partner_invitation',{p_id:invitation.id,p_accept:kind==='accept'}):{error:new Error('Request not available')};
-    if(result.error)throw result.error;await cache.invalidateQueries({queryKey:['world']});
+    if(result.error)throw result.error;if(kind==='join'&&'data' in result&&result.data!=='ok')throw new Error(String(result.data));await cache.invalidateQueries({queryKey:['world']});
     setNotice(kind==='join'?'Request sent. You are not connected until your partner approves.':kind==='cancel'?'Invitation cancelled.':'');
     if(kind==='accept')await navigate({to:'/connected'});
   },onError:error=>setNotice(error.message)});
