@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## App architecture
+- Centralize invitation input constraints and normalization in `src/lib/invite-code.ts`, mirroring the backend alphabet and length, to prevent form and server validation drift.
 - Keep each public screen in its own top-level TanStack route with unique leaf metadata, so every screen has a stable URL and preview title.
 - Share the first-stage couples UI and navigation through `src/components/between-us.tsx`; keep visual tokens and reusable styles in `src/styles.css` for a consistent phone-first experience.
 - Account, connection, and storage controls are explicitly nonpersistent previews until a real secured backend is connected; never simulate successful authentication or partner linking.
