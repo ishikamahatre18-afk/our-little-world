@@ -169,6 +169,23 @@ export function useMemories(relId?: string) {
   });
 }
 
+/** Just titles and dates, for the notification feed (no photo links). */
+export type MemoryNote = { id: string; author_id: string; title: string; created_at: string };
+
+export function useMemoryFeed(relId?: string) {
+  return useQuery({
+    queryKey: ['memory-feed', relId],
+    enabled: !!relId,
+    staleTime: 60000,
+    refetchInterval: 60000,
+    queryFn: async (): Promise<MemoryNote[]> => {
+      const { data, error } = await db.from('memories').select('id, author_id, title, created_at').order('created_at', { ascending: false }).limit(20);
+      if (error) failure(error);
+      return data ?? [];
+    },
+  });
+}
+
 // ---------------------------------------------------------------------
 // Bucket list
 // ---------------------------------------------------------------------
@@ -216,6 +233,148 @@ export function usePulses(relId?: string) {
 }
 
 // ---------------------------------------------------------------------
+// Little Lesson check-ins
+// ---------------------------------------------------------------------
+export type LessonCheckin = { id: string; user_id: string; lesson_day: string; created_at: string };
+
+export function useLessonCheckins(relId?: string) {
+  return useQuery({
+    queryKey: ['lessons', relId],
+    enabled: !!relId,
+    staleTime: 15000,
+    refetchInterval: 30000,
+    queryFn: async (): Promise<LessonCheckin[]> => {
+      const { data, error } = await db.from('lesson_checkins').select('id, user_id, lesson_day, created_at').order('lesson_day', { ascending: false }).limit(800);
+      if (error) failure(error);
+      return data ?? [];
+    },
+  });
+}
+
+// ---------------------------------------------------------------------
+// Need cards
+// ---------------------------------------------------------------------
+export type NeedRow = { id: string; user_id: string; need_day: string; kind: string; note: string | null; acked_at: string | null; created_at: string };
+
+export function useNeeds(relId?: string) {
+  return useQuery({
+    queryKey: ['needs', relId],
+    enabled: !!relId,
+    staleTime: 10000,
+    refetchInterval: 30000,
+    queryFn: async (): Promise<NeedRow[]> => {
+      const { data, error } = await db.from('need_cards').select('id, user_id, need_day, kind, note, acked_at, created_at').order('need_day', { ascending: false }).limit(120);
+      if (error) failure(error);
+      return data ?? [];
+    },
+  });
+}
+
+// ---------------------------------------------------------------------
+// Repair
+// ---------------------------------------------------------------------
+export type RepairRow = { id: string; started_by: string; status: 'open' | 'closed'; started_at: string; closed_at: string | null };
+export type RepairEntry = { id: string; repair_id: string; user_id: string; felt: string; need: string; sorry: string | null; created_at: string };
+
+export function useRepairs(relId?: string) {
+  return useQuery({
+    queryKey: ['repairs', relId],
+    enabled: !!relId,
+    staleTime: 10000,
+    refetchInterval: 20000,
+    queryFn: async (): Promise<{ repairs: RepairRow[]; entries: RepairEntry[] }> => {
+      const [repairs, entries] = await Promise.all([
+        db.from('repairs').select('id, started_by, status, started_at, closed_at').order('started_at', { ascending: false }).limit(30),
+        db.from('repair_entries').select('id, repair_id, user_id, felt, need, sorry, created_at').order('created_at', { ascending: true }).limit(120),
+      ]);
+      if (repairs.error) failure(repairs.error);
+      if (entries.error) failure(entries.error);
+      return { repairs: repairs.data ?? [], entries: entries.data ?? [] };
+    },
+  });
+}
+
+// ---------------------------------------------------------------------
+// Journey diary
+// ---------------------------------------------------------------------
+export type JournalRow = {
+  id: string;
+  author_id: string;
+  entry_date: string;
+  title: string;
+  body: string;
+  mood: number | null;
+  visibility: 'shared' | 'private';
+  created_at: string;
+};
+
+export function useJournal(relId?: string) {
+  return useQuery({
+    queryKey: ['journal', relId],
+    enabled: !!relId,
+    staleTime: 30000,
+    refetchInterval: 60000,
+    queryFn: async (): Promise<JournalRow[]> => {
+      const { data, error } = await db.from('journal_entries').select('*').order('entry_date', { ascending: false }).order('created_at', { ascending: false }).limit(600);
+      if (error) failure(error);
+      return data ?? [];
+    },
+  });
+}
+
+// ---------------------------------------------------------------------
+// Appreciation jar
+// ---------------------------------------------------------------------
+export type JarNote = { id: string; author_id: string; body: string; created_at: string };
+export type JarMonth = { month: string; mine: number; theirs: number };
+
+export function useJarNotes(relId?: string) {
+  return useQuery({
+    queryKey: ['jar', relId],
+    enabled: !!relId,
+    staleTime: 30000,
+    refetchInterval: 60000,
+    queryFn: async (): Promise<JarNote[]> => {
+      const { data, error } = await db.from('appreciations').select('id, author_id, body, created_at').order('created_at', { ascending: false }).limit(600);
+      if (error) failure(error);
+      return data ?? [];
+    },
+  });
+}
+
+export function useJarCounts(relId?: string) {
+  return useQuery({
+    queryKey: ['jar-counts', relId],
+    enabled: !!relId,
+    staleTime: 30000,
+    refetchInterval: 60000,
+    queryFn: async (): Promise<JarMonth[]> => {
+      const { data, error } = await db.rpc('jar_counts');
+      if (error) failure(error);
+      return Array.isArray(data) ? (data as JarMonth[]) : [];
+    },
+  });
+}
+
+// ---------------------------------------------------------------------
+// Growth (counts per month)
+// ---------------------------------------------------------------------
+export type GrowthMonth = { month: string; answers: number; lessons: number; journal: number; repairs: number; memories: number; letters: number; cared: number };
+
+export function useGrowth(relId?: string) {
+  return useQuery({
+    queryKey: ['growth', relId],
+    enabled: !!relId,
+    staleTime: 60000,
+    queryFn: async (): Promise<GrowthMonth[]> => {
+      const { data, error } = await db.rpc('growth_stats');
+      if (error) failure(error);
+      return Array.isArray(data) ? (data as GrowthMonth[]) : [];
+    },
+  });
+}
+
+// ---------------------------------------------------------------------
 // Little red dots for the tab bar
 // ---------------------------------------------------------------------
 export function useBadges(): Record<string, number> {
@@ -223,9 +382,17 @@ export function useBadges(): Record<string, number> {
   const today = useToday();
   const inbox = useInbox(relId);
   const answers = useAnswers(relId);
+  const repairs = useRepairs(relId);
+  const needs = useNeeds(relId);
   if (!relId) return {};
   const waitingLetters = (inbox.data ?? []).filter(letter => !letter.sealed && !letter.opened_at).length;
   const answeredToday = (answers.data ?? []).some(row => row.user_id === userId && row.question_day === today);
-  const space = waitingLetters + (answers.isSuccess && !answeredToday ? 1 : 0);
-  return space > 0 ? { '/our-space': space } : {};
+  const openRepair = (repairs.data?.repairs ?? []).find(repair => repair.status === 'open');
+  const repairWaiting = openRepair && !(repairs.data?.entries ?? []).some(entry => entry.repair_id === openRepair.id && entry.user_id === userId) ? 1 : 0;
+  const space = waitingLetters + (answers.isSuccess && !answeredToday ? 1 : 0) + repairWaiting;
+  const needWaiting = (needs.data ?? []).some(row => row.user_id !== userId && row.need_day === today && !row.acked_at) ? 1 : 0;
+  const badges: Record<string, number> = {};
+  if (space > 0) badges['/our-space'] = space;
+  if (needWaiting > 0) badges['/home'] = needWaiting;
+  return badges;
 }

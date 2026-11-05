@@ -72,7 +72,7 @@ export function MemoryComposer({
         uploaded.push(path);
       }
       await rpcOk('add_memory', { p_title: title, p_note: note, p_date: date, p_photos: uploaded });
-      await refresh('memories');
+      await refresh('memories', 'memory-feed', 'growth');
       onClose();
     } catch (problem) {
       setError(messageOf(problem));
@@ -135,7 +135,7 @@ function MemoryCard({ memory, mine, authorName }: { memory: MemoryRow; mine: boo
     setError('');
     try {
       await rpcOk('delete_memory', { p_id: memory.id });
-      await refresh('memories');
+      await refresh('memories', 'memory-feed', 'growth');
       if (memory.photo_paths.length > 0) {
         try {
           await db.storage.from('memory-photos').remove(memory.photo_paths);

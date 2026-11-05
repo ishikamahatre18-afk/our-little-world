@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, Camera, CalendarHeart, Coffee, Flame, Flower2, Gem, Heart, Mail, Plane, Sparkles } from 'lucide-react';
+import { ArrowRight, Camera, CalendarHeart, Coffee, Flame, Flower2, Gem, Heart, HeartHandshake, Mail, Plane, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { messageOf, rpcOk } from '@/lib/db';
 import { daysAwayText, daysBetween, daysUntilAnniversary, dayNumber, formatDay, milestoneSummary, timeAgo } from '@/lib/couple-time';
@@ -8,7 +8,9 @@ import { LOVE_NOTES } from '@/lib/ideas';
 import { questionForDay } from '@/lib/questions';
 import { currentStreak } from '@/lib/streak';
 import { DailyPanel } from './daily';
-import { PULSE_TEXT, useAnswers, useCouple, usePartnerAnswered, usePulses, useRefresh, useToday, type PulseKind } from './data';
+import { LessonCard, LessonPanel } from './lesson';
+import { NeedsCard } from './needs';
+import { PULSE_TEXT, useAnswers, useCouple, usePartnerAnswered, usePulses, useRefresh, useRepairs, useToday, type PulseKind } from './data';
 import { AccountPrompt, Avatar, AppShell, WorldStatus } from './shell';
 import { Notice, Sheet } from './ui';
 
@@ -161,6 +163,23 @@ function MilestoneStrip({ anniversary, today }: { anniversary: string; today: st
   );
 }
 
+function RepairNudge() {
+  const { relId, userId, partner } = useCouple();
+  const repairs = useRepairs(relId);
+  const open = (repairs.data?.repairs ?? []).find(repair => repair.status === 'open');
+  if (!open) return null;
+  const shared = (repairs.data?.entries ?? []).some(entry => entry.repair_id === open.id && entry.user_id === userId);
+  if (shared) return null;
+  const name = partner?.name || 'Your partner';
+  return (
+    <Link to="/our-space" hash="repair" className="repair-nudge">
+      <HeartHandshake size={18} />
+      <span>{open.started_by === userId ? 'Your gentle talk is open. Share your side' : `${name} would like to talk things through, gently`}</span>
+      <ArrowRight size={16} />
+    </Link>
+  );
+}
+
 function QuestionCard({ onOpen }: { onOpen: () => void }) {
   const { relId, userId } = useCouple();
   const today = useToday();
@@ -196,6 +215,7 @@ export function HomeScreen() {
   const { world, user, me, partner, relationship } = useCouple();
   const today = useToday();
   const [question, setQuestion] = useState(false);
+  const [lesson, setLesson] = useState(false);
   const anniversary = relationship?.anniversary || me?.anniversary || undefined;
   const together = anniversary ? daysBetween(anniversary, today) : undefined;
   const untilAnniversary = anniversary ? daysUntilAnniversary(anniversary, today) : undefined;
@@ -269,7 +289,10 @@ export function HomeScreen() {
 
       {relationship ? (
         <>
+          <RepairNudge />
           <PulseCard />
+          <NeedsCard />
+          <LessonCard onOpen={() => setLesson(true)} />
           <QuestionCard onOpen={() => setQuestion(true)} />
           <MeetupCard />
           {anniversary ? <MilestoneStrip anniversary={anniversary} today={today} /> : null}
@@ -315,6 +338,12 @@ export function HomeScreen() {
       <p className="home-footnote">
         Just us. Just love. <Heart size={11} />
       </p>
+
+      {lesson ? (
+        <Sheet title="Little lesson" onClose={() => setLesson(false)}>
+          <LessonPanel />
+        </Sheet>
+      ) : null}
 
       {question ? (
         <Sheet title="A moment for us" onClose={() => setQuestion(false)}>

@@ -6,6 +6,7 @@ import hearts from '@/assets/together-hearts.jpg';
 import { useAccount, useWorld, type Profile } from '@/components/account-context';
 import { db, messageOf, rpcOk } from '@/lib/db';
 import { PULSE_TEXT, useBadges, useCouple, usePulses, useRefresh } from './data';
+import { NotificationBell } from './notifications';
 
 export function Avatar({ profile, partner = false }: { profile?: Profile | undefined; partner?: boolean }) {
   return (
@@ -157,6 +158,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Brand />
         <div className="header-right">
           <span className="demo-label">{user ? 'Your little world' : 'Welcome, love'}</span>
+          <NotificationBell />
           <Button variant="ghost" size="icon" asChild aria-label="Your profile">
             <Link to="/profile">
               <UserRound size={18} />
