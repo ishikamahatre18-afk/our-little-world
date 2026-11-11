@@ -7,7 +7,6 @@ import { ConnectPartner } from '@/components/between-us';
 
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn().mockResolvedValue({ data: 'ok', error: null }) }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc } }));
-vi.mock('@/integrations/lovable', () => ({ lovable: {} }));
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: ReactNode }) => createElement('a', null, children),
   useNavigate: () => vi.fn(),
