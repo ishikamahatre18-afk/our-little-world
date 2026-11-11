@@ -1,11 +1,11 @@
 import { useState, type ReactNode } from 'react';
 import { Link, useRouterState } from '@tanstack/react-router';
-import { ArrowRight, Camera, Flower2, Heart, Home, Sparkles, UserRound, X } from 'lucide-react';
+import { ArrowRight, Camera, Flower2, Heart, Home, MessageCircleHeart, UserRound, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import hearts from '@/assets/together-hearts.jpg';
 import { useAccount, useWorld, type Profile } from '@/components/account-context';
 import { db, messageOf, rpcOk } from '@/lib/db';
-import { PULSE_TEXT, useBadges, useCouple, usePulses, useRefresh } from './data';
+import { PULSE_TEXT, useBadges, useChatRealtime, useCouple, usePulses, useRefresh } from './data';
 import { NotificationBell } from './notifications';
 
 export function Avatar({ profile, partner = false }: { profile?: Profile | undefined; partner?: boolean }) {
@@ -93,10 +93,10 @@ export function PageHeading({ eyebrow, title, subtitle }: { eyebrow: string; tit
 
 const navigation = [
   { to: '/home', label: 'Home', icon: Home },
-  { to: '/our-space', label: 'Our Space', icon: Heart },
-  { to: '/activities', label: 'Together', icon: Sparkles },
-  { to: '/memories', label: 'Memories', icon: Camera },
-  { to: '/profile', label: 'Profile', icon: UserRound },
+  { to: '/chat', label: 'Chat', icon: MessageCircleHeart },
+  { to: '/our-space', label: 'Us', icon: Heart },
+  { to: '/memories', label: 'Keepsakes', icon: Camera },
+  { to: '/profile', label: 'You', icon: UserRound },
 ] as const;
 
 /** A gentle banner when your partner has sent you a "thinking of you". */
@@ -150,8 +150,11 @@ export function PulseBanner() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { user } = useAccount();
+  const { relId } = useCouple();
   const pathname = useRouterState({ select: state => state.location.pathname });
   const badges = useBadges();
+  useChatRealtime(relId);
+  const isActive = (to: string) => pathname === to || (to === '/our-space' && pathname === '/activities');
   return (
     <div className="app-shell">
       <header className="app-header">
@@ -169,7 +172,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside className="desktop-navigation">
         <span className="eyebrow">OUR LITTLE WORLD</span>
         {navigation.map(({ to, label, icon: Icon }) => (
-          <Button asChild variant="nav" key={to} className={pathname === to ? 'is-active' : ''}>
+          <Button asChild variant="nav" key={to} className={isActive(to) ? 'is-active' : ''}>
             <Link to={to}>
               <Icon size={19} />
               {label}
@@ -189,7 +192,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </main>
       <nav className="bottom-navigation dock" aria-label="Main navigation">
         {navigation.map(({ to, label, icon: Icon }) => {
-          const active = pathname === to;
+          const active = isActive(to);
           const badge = badges[to];
           return (
             <Link key={to} to={to} className={`dock-item${active ? ' is-active' : ''}`} aria-current={active ? 'page' : undefined}>

@@ -99,4 +99,4 @@ export function ProfileScreen() {
 
 
 export { Brand, AppShell, PageHeading } from '@/features/shell';
-export { HomeScreen, SpaceScreen, ActivitiesScreen, MemoriesScreen } from '@/features/screens';
+export { HomeScreen, SpaceScreen, ActivitiesScreen, MemoriesScreen, ChatScreen } from '@/features/screens';

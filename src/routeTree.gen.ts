@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ActivitiesRouteImport } from './routes/activities'
+import { Route as ChatRouteImport } from './routes/chat'
 import { Route as ConnectRouteImport } from './routes/connect'
 import { Route as ConnectedRouteImport } from './routes/connected'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -31,6 +32,11 @@ const IndexRoute = IndexRouteImport.update({
 const ActivitiesRoute = ActivitiesRouteImport.update({
   id: '/activities',
   path: '/activities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatRoute = ChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConnectRoute = ConnectRouteImport.update({
@@ -92,6 +98,7 @@ const SignupRoute = SignupRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/activities': typeof ActivitiesRoute
+  '/chat': typeof ChatRoute
   '/connect': typeof ConnectRoute
   '/connected': typeof ConnectedRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/activities': typeof ActivitiesRoute
+  '/chat': typeof ChatRoute
   '/connect': typeof ConnectRoute
   '/connected': typeof ConnectedRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/activities': typeof ActivitiesRoute
+  '/chat': typeof ChatRoute
   '/connect': typeof ConnectRoute
   '/connected': typeof ConnectedRoute
   '/forgot-password': typeof ForgotPasswordRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/activities'
+    | '/chat'
     | '/connect'
     | '/connected'
     | '/forgot-password'
@@ -155,6 +165,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/activities'
+    | '/chat'
     | '/connect'
     | '/connected'
     | '/forgot-password'
@@ -170,6 +181,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/activities'
+    | '/chat'
     | '/connect'
     | '/connected'
     | '/forgot-password'
@@ -186,6 +198,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ActivitiesRoute: typeof ActivitiesRoute
+  ChatRoute: typeof ChatRoute
   ConnectRoute: typeof ConnectRoute
   ConnectedRoute: typeof ConnectedRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
@@ -213,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/activities'
       fullPath: '/activities'
       preLoaderRoute: typeof ActivitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat': {
+      id: '/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/connect': {
@@ -298,6 +318,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ActivitiesRoute: ActivitiesRoute,
+  ChatRoute: ChatRoute,
   ConnectRoute: ConnectRoute,
   ConnectedRoute: ConnectedRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,

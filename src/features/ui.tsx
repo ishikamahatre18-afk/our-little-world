@@ -59,11 +59,13 @@ export function CoupleGate({
   eyebrow,
   title,
   subtitle,
+  showHeading = true,
   children,
 }: {
   eyebrow: string;
   title: string;
   subtitle: string;
+  showHeading?: boolean;
   children: (couple: ReturnType<typeof useCouple>) => ReactNode;
 }) {
   const couple = useCouple();
@@ -71,7 +73,7 @@ export function CoupleGate({
   const ready = !!user && !world.isPending && !world.error;
   return (
     <AppShell>
-      <PageHeading eyebrow={eyebrow} title={title} subtitle={subtitle} />
+      {showHeading ? <PageHeading eyebrow={eyebrow} title={title} subtitle={subtitle} /> : null}
       <WorldStatus world={world} />
       {!world.accountLoading && !user ? <AccountPrompt /> : null}
       {ready && !relationship ? <NeedPartner /> : null}

@@ -20,7 +20,7 @@ const ICONS: Record<NeedKind, LucideIcon> = {
   talk: MessagesSquare,
 };
 
-function NeedIcon({ kind, size = 24 }: { kind: string; size?: number }) {
+export function NeedIcon({ kind, size = 24 }: { kind: string; size?: number }) {
   const Icon = ICONS[kind as NeedKind] ?? Heart;
   return <Icon size={size} strokeWidth={1.25} />;
 }

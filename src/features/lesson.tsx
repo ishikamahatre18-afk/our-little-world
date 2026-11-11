@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { BookHeart, Check, Flame, Heart } from 'lucide-react';
+import { ArrowRight, BookHeart, Check, Flame, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { messageOf, rpcOk } from '@/lib/db';
 import { dayNumber, formatDay } from '@/lib/couple-time';
@@ -52,6 +52,32 @@ export function LessonCard({ onOpen }: { onOpen: () => void }) {
         </Button>
       </div>
     </section>
+  );
+}
+
+/** A small widget version for Home. */
+export function LessonTile({ onOpen }: { onOpen: () => void }) {
+  const { today, mineToday, theirsToday, streak } = useLessonState();
+  const lesson = lessonForDay(dayNumber(today));
+  const foot = mineToday && theirsToday ? 'You both tried it' : mineToday ? 'Waiting for them' : theirsToday ? 'Your turn' : 'Read and try';
+  return (
+    <button type="button" className="tile tile-lesson" onClick={onOpen}>
+      <span className="tile-top">
+        <span className="tile-icon">
+          <BookHeart size={18} />
+        </span>
+        {streak > 0 ? (
+          <span className="streak-pill">
+            <Flame size={12} /> {streak}
+          </span>
+        ) : null}
+      </span>
+      <span className="tile-label">LITTLE LESSON</span>
+      <h3>{lesson.title}</h3>
+      <span className="tile-foot">
+        {foot} <ArrowRight size={13} />
+      </span>
+    </button>
   );
 }
 

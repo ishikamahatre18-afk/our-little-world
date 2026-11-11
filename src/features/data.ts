@@ -375,6 +375,66 @@ export function useGrowth(relId?: string) {
 }
 
 // ---------------------------------------------------------------------
+// Private chat
+// ---------------------------------------------------------------------
+export type ChatRow = { id: string; sender_id: string; body: string; created_at: string; read_at: string | null };
+
+export function useMessages(relId?: string) {
+  return useQuery({
+    queryKey: ['chat', relId],
+    enabled: !!relId,
+    staleTime: 3000,
+    refetchInterval: 8000,
+    queryFn: async (): Promise<ChatRow[]> => {
+      const { data, error } = await db.from('chat_messages').select('id, sender_id, body, created_at, read_at').order('created_at', { ascending: false }).limit(200);
+      if (error) failure(error);
+      return ((data ?? []) as ChatRow[]).slice().reverse();
+    },
+  });
+}
+
+export function useChatUnread(relId?: string) {
+  return useQuery({
+    queryKey: ['chat-unread', relId],
+    enabled: !!relId,
+    staleTime: 5000,
+    refetchInterval: 20000,
+    queryFn: async (): Promise<number> => {
+      const { data, error } = await db.rpc('chat_unread');
+      if (error) failure(error);
+      return typeof data === 'number' ? data : 0;
+    },
+  });
+}
+
+/** Live updates: new messages show up instantly while the app is open. (If realtime is off, the polling above still works.) */
+export function useChatRealtime(relId?: string) {
+  const client = useQueryClient();
+  useEffect(() => {
+    if (!relId) return;
+    let channel: unknown;
+    try {
+      channel = db
+        .channel(`chat-${relId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_messages', filter: `relationship_id=eq.${relId}` }, () => {
+          void client.invalidateQueries({ queryKey: ['chat'] });
+          void client.invalidateQueries({ queryKey: ['chat-unread'] });
+        })
+        .subscribe();
+    } catch {
+      // realtime is a bonus; polling keeps the chat fresh
+    }
+    return () => {
+      try {
+        if (channel) void db.removeChannel(channel);
+      } catch {
+        // nothing to clean up
+      }
+    };
+  }, [relId, client]);
+}
+
+// ---------------------------------------------------------------------
 // Little red dots for the tab bar
 // ---------------------------------------------------------------------
 export function useBadges(): Record<string, number> {
@@ -384,6 +444,7 @@ export function useBadges(): Record<string, number> {
   const answers = useAnswers(relId);
   const repairs = useRepairs(relId);
   const needs = useNeeds(relId);
+  const unread = useChatUnread(relId);
   if (!relId) return {};
   const waitingLetters = (inbox.data ?? []).filter(letter => !letter.sealed && !letter.opened_at).length;
   const answeredToday = (answers.data ?? []).some(row => row.user_id === userId && row.question_day === today);
@@ -394,5 +455,6 @@ export function useBadges(): Record<string, number> {
   const badges: Record<string, number> = {};
   if (space > 0) badges['/our-space'] = space;
   if (needWaiting > 0) badges['/home'] = needWaiting;
+  if ((unread.data ?? 0) > 0) badges['/chat'] = unread.data ?? 0;
   return badges;
 }

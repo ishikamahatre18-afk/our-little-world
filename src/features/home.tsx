@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, Camera, CalendarHeart, Coffee, Flame, Flower2, Gem, Heart, HeartHandshake, Mail, Plane, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, Camera, CalendarHeart, Coffee, Flame, Flower2, Gem, HandHeart, Heart, HeartHandshake, Mail, Plane, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { messageOf, rpcOk } from '@/lib/db';
 import { daysAwayText, daysBetween, daysUntilAnniversary, dayNumber, formatDay, milestoneSummary, timeAgo } from '@/lib/couple-time';
 import { LOVE_NOTES } from '@/lib/ideas';
+import { needInfo } from '@/lib/needs';
 import { questionForDay } from '@/lib/questions';
 import { currentStreak } from '@/lib/streak';
 import { DailyPanel } from './daily';
-import { LessonCard, LessonPanel } from './lesson';
-import { NeedsCard } from './needs';
-import { PULSE_TEXT, useAnswers, useCouple, usePartnerAnswered, usePulses, useRefresh, useRepairs, useToday, type PulseKind } from './data';
+import { LessonPanel, LessonTile } from './lesson';
+import { NeedIcon, NeedsCard } from './needs';
+import { PULSE_TEXT, useAnswers, useCouple, useNeeds, usePartnerAnswered, usePulses, useRefresh, useRepairs, useToday, type PulseKind } from './data';
 import { AccountPrompt, Avatar, AppShell, WorldStatus } from './shell';
 import { Notice, Sheet } from './ui';
 
@@ -60,6 +61,120 @@ function PulseCard() {
           {partnerName} {PULSE_TEXT[theirs.kind]?.received ?? 'was thinking of you'} · {timeAgo(theirs.created_at)}
         </p>
       ) : null}
+    </section>
+  );
+}
+
+function greeting(): string {
+  const hour = Number(new Date().toLocaleString('en-IN', { hour: 'numeric', hour12: false, timeZone: 'Asia/Kolkata' })) % 24;
+  return hour < 5 ? 'Still up' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : hour < 21 ? 'Good evening' : 'Good night';
+}
+
+function HeartTile({ onMore }: { onMore: () => void }) {
+  const { relId, userId, partner } = useCouple();
+  const pulses = usePulses(relId);
+  const refresh = useRefresh();
+  const [busy, setBusy] = useState(false);
+  const [burst, setBurst] = useState(false);
+  const [error, setError] = useState('');
+  const name = partner?.name || 'them';
+  const theirs = (pulses.data ?? []).find(pulse => pulse.sender_id !== userId);
+
+  const send = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await rpcOk('send_pulse', { p_kind: 'heart' });
+      setBurst(true);
+      window.setTimeout(() => setBurst(false), 1900);
+      await refresh('pulses');
+    } catch (problem) {
+      setError(messageOf(problem));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="tile tile-heart">
+      {burst ? (
+        <span className="heart-burst" aria-hidden="true">
+          {[0, 1, 2, 3, 4].map(index => (
+            <Heart key={index} size={13 + (index % 3) * 5} fill="currentColor" style={{ left: `${12 + index * 17}%`, animationDelay: `${index * 0.12}s` }} />
+          ))}
+        </span>
+      ) : null}
+      <span className="tile-top">
+        <span className="tile-icon">
+          <Heart size={18} fill="currentColor" />
+        </span>
+      </span>
+      <span className="tile-label">THINKING OF YOU</span>
+      <h3>{error || (theirs ? `${name} ${PULSE_TEXT[theirs.kind]?.received ?? 'was thinking of you'}` : `Send ${name} a little love`)}</h3>
+      <span className="tile-foot">{theirs ? timeAgo(theirs.created_at) : 'No words needed'}</span>
+      <div className="tile-actions">
+        <Button variant="romantic" size="sm" disabled={busy} onClick={send}>
+          {busy ? 'Sending…' : 'Send a heart'}
+        </Button>
+        <button type="button" className="tile-link" onClick={onMore}>
+          More
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function NeedTile({ onOpen }: { onOpen: () => void }) {
+  const { relId, userId, partner } = useCouple();
+  const today = useToday();
+  const needs = useNeeds(relId);
+  const refresh = useRefresh();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const rows = needs.data ?? [];
+  const mine = rows.find(row => row.user_id === userId && row.need_day === today);
+  const theirs = rows.find(row => row.user_id !== userId && row.need_day === today);
+  const name = partner?.name || 'Your partner';
+
+  const ack = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await rpcOk('ack_need');
+      await refresh('needs', 'growth');
+    } catch (problem) {
+      setError(messageOf(problem));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <section className="tile tile-need">
+      <span className="tile-top">
+        <span className="tile-icon">{theirs ? <NeedIcon kind={theirs.kind} size={18} /> : <HandHeart size={18} />}</span>
+      </span>
+      <span className="tile-label">{theirs ? `${name.toUpperCase()} NEEDS` : 'NEEDS TODAY'}</span>
+      <h3>{error || (theirs ? needInfo(theirs.kind).label : mine ? `You need ${needInfo(mine.kind).need}` : 'Share what you need today')}</h3>
+      <span className="tile-foot">
+        {theirs ? (theirs.acked_at ? 'You’ve got them' : theirs.note ? `“${theirs.note}”` : 'Let them know you’re here') : mine ? (mine.acked_at ? `${name} has got you` : `${name} can see this`) : 'Five seconds, one tap'}
+      </span>
+      <div className="tile-actions">
+        {theirs && !theirs.acked_at ? (
+          <Button variant="romantic" size="sm" disabled={busy} onClick={ack}>
+            I’ve got you
+          </Button>
+        ) : (
+          <Button variant="soft" size="sm" onClick={onOpen}>
+            {mine ? 'My card' : 'Choose'}
+          </Button>
+        )}
+        {theirs && !theirs.acked_at ? (
+          <button type="button" className="tile-link" onClick={onOpen}>
+            My card
+          </button>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -216,6 +331,8 @@ export function HomeScreen() {
   const today = useToday();
   const [question, setQuestion] = useState(false);
   const [lesson, setLesson] = useState(false);
+  const [hearts, setHearts] = useState(false);
+  const [needs, setNeeds] = useState(false);
   const anniversary = relationship?.anniversary || me?.anniversary || undefined;
   const together = anniversary ? daysBetween(anniversary, today) : undefined;
   const untilAnniversary = anniversary ? daysUntilAnniversary(anniversary, today) : undefined;
@@ -223,17 +340,20 @@ export function HomeScreen() {
 
   return (
     <AppShell>
-      <div className="page-heading">
-        <div>
-          <span className="eyebrow">OUR LITTLE WORLD</span>
-          <h1>
-            Home is <em>with you.</em>
-          </h1>
-          <p>A little love, a little closer, every day.</p>
-        </div>
-        <span className="heading-flower">
-          <Flower2 size={35} strokeWidth={1} />
-        </span>
+      <div className="home-hello">
+        <span className="eyebrow">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' }).toUpperCase()}</span>
+        <h1>
+          {greeting()}
+          {me?.name ? (
+            <>
+              , <em>{me.name}.</em>
+            </>
+          ) : (
+            <>
+              , <em>love.</em>
+            </>
+          )}
+        </h1>
       </div>
       <WorldStatus world={world} />
       <section className="couple-band">
@@ -290,12 +410,40 @@ export function HomeScreen() {
       {relationship ? (
         <>
           <RepairNudge />
-          <PulseCard />
-          <NeedsCard />
-          <LessonCard onOpen={() => setLesson(true)} />
-          <QuestionCard onOpen={() => setQuestion(true)} />
-          <MeetupCard />
-          {anniversary ? <MilestoneStrip anniversary={anniversary} today={today} /> : null}
+          <div className="widget-grid">
+            <HeartTile onMore={() => setHearts(true)} />
+            <NeedTile onOpen={() => setNeeds(true)} />
+            <QuestionCard onOpen={() => setQuestion(true)} />
+            <LessonTile onOpen={() => setLesson(true)} />
+            <MeetupCard />
+            {anniversary ? <MilestoneStrip anniversary={anniversary} today={today} /> : null}
+          </div>
+          <div className="quick-row">
+            <Link to="/our-space" hash="letters" className="quick-tile">
+              <span>
+                <Mail size={21} strokeWidth={1.4} />
+              </span>
+              Letter
+            </Link>
+            <Link to="/memories" hash="memories" className="quick-tile">
+              <span>
+                <Camera size={21} strokeWidth={1.4} />
+              </span>
+              Memory
+            </Link>
+            <Link to="/memories" hash="diary" className="quick-tile">
+              <span>
+                <BookOpen size={21} strokeWidth={1.4} />
+              </span>
+              Diary
+            </Link>
+            <Link to="/our-space" hash="jar" className="quick-tile">
+              <span>
+                <Flower2 size={21} strokeWidth={1.4} />
+              </span>
+              Jar
+            </Link>
+          </div>
         </>
       ) : null}
 
@@ -309,35 +457,21 @@ export function HomeScreen() {
         </span>
       </section>
 
-      <div className="section-heading">
-        <h2>Little things, big feelings.</h2>
-        <Heart size={16} />
-      </div>
-      <div className="quick-grid">
-        <Link to="/our-space" className="quick-card letter-card">
-          <span className="quick-icon">
-            <Mail size={26} strokeWidth={1.2} />
-          </span>
-          <div>
-            <h3>Love letters</h3>
-            <p>Words from the heart</p>
-          </div>
-          <ArrowRight size={18} />
-        </Link>
-        <Link to="/memories" className="quick-card memory-card">
-          <span className="quick-icon">
-            <Camera size={26} strokeWidth={1.2} />
-          </span>
-          <div>
-            <h3>Our memories</h3>
-            <p>Moments to keep forever</p>
-          </div>
-          <ArrowRight size={18} />
-        </Link>
-      </div>
       <p className="home-footnote">
         Just us. Just love. <Heart size={11} />
       </p>
+
+      {hearts ? (
+        <Sheet title="A little moment" onClose={() => setHearts(false)}>
+          <PulseCard />
+        </Sheet>
+      ) : null}
+
+      {needs ? (
+        <Sheet title="What I need today" onClose={() => setNeeds(false)}>
+          <NeedsCard />
+        </Sheet>
+      ) : null}
 
       {lesson ? (
         <Sheet title="Little lesson" onClose={() => setLesson(false)}>

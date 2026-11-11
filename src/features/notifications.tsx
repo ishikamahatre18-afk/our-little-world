@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Bell, BellRing, BookOpen, Camera, Coffee, HandHeart, Heart, HeartHandshake, ListChecks, Mail, Sparkles } from 'lucide-react';
+import { Bell, BellRing, BookOpen, Camera, Coffee, HandHeart, Heart, HeartHandshake, ListChecks, Mail, MessageCircleHeart, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { timeAgo } from '@/lib/couple-time';
 import { needInfo } from '@/lib/needs';
-import { PULSE_TEXT, useBucket, useCouple, useInbox, useJournal, useLessonCheckins, useMemoryFeed, useNeeds, usePulses, useRepairs } from './data';
+import { PULSE_TEXT, useBucket, useCouple, useInbox, useJournal, useLessonCheckins, useMemoryFeed, useMessages, useNeeds, usePulses, useRepairs } from './data';
 import { Sheet } from './sheet';
 
 export type AppEvent = { id: string; at: string; icon: LucideIcon; text: string; detail?: string | undefined; to: string; hash?: string | undefined };
@@ -42,6 +42,7 @@ export function useEvents(): AppEvent[] {
   const journal = useJournal(relId);
   const memories = useMemoryFeed(relId);
   const bucket = useBucket(relId);
+  const chat = useMessages(relId);
   const name = partner?.name || 'Your partner';
 
   return useMemo(() => {
@@ -73,12 +74,17 @@ export function useEvents(): AppEvent[] {
     for (const item of bucket.data ?? []) {
       if (item.added_by !== userId) events.push({ id: `bucket-${item.id}`, at: item.created_at, icon: ListChecks, text: `${name} added to your list`, detail: item.title, to: '/activities' });
     }
+    const unreadChat = (chat.data ?? []).filter(message => message.sender_id !== userId && !message.read_at);
+    const lastChat = unreadChat[unreadChat.length - 1];
+    if (lastChat) {
+      events.push({ id: `chat-${lastChat.id}`, at: lastChat.created_at, icon: MessageCircleHeart, text: unreadChat.length > 1 ? `${name} sent you ${unreadChat.length} messages` : `${name} sent you a message`, to: '/chat' });
+    }
     const cutoff = Date.now() - FOURTEEN_DAYS;
     return events
       .filter(event => ms(event.at) > cutoff)
       .sort((a, b) => ms(b.at) - ms(a.at))
       .slice(0, 40);
-  }, [relId, userId, name, pulses.data, inbox.data, needs.data, repairs.data, lessons.data, journal.data, memories.data, bucket.data]);
+  }, [relId, userId, name, pulses.data, inbox.data, needs.data, repairs.data, lessons.data, journal.data, memories.data, bucket.data, chat.data]);
 }
 
 /** Remembers when you last looked, on this device only. */
